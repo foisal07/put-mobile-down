@@ -13,7 +13,7 @@
     </section>
     <script
       src="https://code.jquery.com/jquery-3.7.1.min.js"
-      integrity="sha256-3fp1Jp1rjYhZ+3VIAtF5NCzlyL+G5kZZg8AAkPcE8u8="
+      integrity="sha256-3ed/Sejtfx2NGEylh4GmxIVtw1YdFqpry9lf2l9MyLM="
       crossorigin="anonymous"
     ></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery.ripples@0.6.3/dist/jquery.ripples.min.js"></script>
@@ -34,21 +34,12 @@
         try {
           $ripple.ripples({
             resolution: 512,
-            dropRadius: 10,
+            dropRadius: 20,
             perturbance: 0.01,
           });
         } catch (error) {
           console.error("Failed to initialise ripples effect:", error);
         }
-      });
-    </script>
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
-    <script src="http://www.jqueryscript.net/demo/jQuery-Plugin-For-Water-Ripple-Animation-ripples/js/jquery.ripples.js"></script>
-    <script>
-      $(".app-page").ripples({
-        resolution: 512,
-        dropRadius: 10,
-        perturbance: 0.01,
       });
     </script>
   </body>
