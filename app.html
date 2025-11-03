@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Put Your Phone Down - App</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="gallery.css" />
+  </head>
+  <body class="app-page">
+    <section class="ripple-section">
+      <div id="ripple" class="ripples"></div>
+    </section>
+    <script
+      src="https://code.jquery.com/jquery-3.7.1.min.js"
+      integrity="sha256-3fp1Jp1rjYhZ+3VIAtF5NCzlyL+G5kZZg8AAkPcE8u8="
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery.ripples@0.6.3/dist/jquery.ripples.min.js"></script>
+    <script src="script.js"></script>
+    <script>
+      window.addEventListener("DOMContentLoaded", function initRipples() {
+        if (!window.jQuery || typeof window.jQuery.fn.ripples !== "function") {
+          console.warn("jQuery ripples plugin not available.");
+          return;
+        }
+
+        var $ripple = window.jQuery("#ripple");
+
+        if ($ripple.length === 0) {
+          return;
+        }
+
+        try {
+          $ripple.ripples({
+            resolution: 512,
+            dropRadius: 10,
+            perturbance: 0.01,
+          });
+        } catch (error) {
+          console.error("Failed to initialise ripples effect:", error);
+        }
+      });
+    </script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script src="http://www.jqueryscript.net/demo/jQuery-Plugin-For-Water-Ripple-Animation-ripples/js/jquery.ripples.js"></script>
+    <script>
+      $(".app-page").ripples({
+        resolution: 512,
+        dropRadius: 10,
+        perturbance: 0.01,
+      });
+    </script>
+  </body>
+</html>

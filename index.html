@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Put Your Phone Down</title>
+    <title>Put Your Phone Down – Scan QR</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="gallery.css">
 </head>
 <body>
     <div id="container">
         <div id="main-screen">
-            <h1>Connect headphones, put your phone down and rhythmically tap the screen</h1>
+            <h1>Scan this QR code to open the app on your phone</h1>
+            <div id="qrcode" style="margin-top: 20px;"></div>
+            <p style="margin-top: 12px;">Or <a href="app.html">open the app on this device</a>.</p>
         </div>
-        <a href="gallery.html">View Gallery</a>
-        <a href="qrcode.html">Show QR Code</a>
     </div>
-    <script src="script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="qrcode.js"></script>
 </body>
 </html>
