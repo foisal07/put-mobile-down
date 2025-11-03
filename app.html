@@ -11,9 +11,9 @@
     <section class="ripple-section">
       <div id="ripple" class="ripples"></div>
     </section>
+
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery.ripples@0.6.3/dist/jquery.ripples.min.js"></script>
-    <script src="script.js"></script>
     <script>
       (function registerRipples() {
         var initialised = false;
@@ -22,22 +22,45 @@
           if (initialised) {
             return;
           }
-          if (!window.jQuery || !window.jQuery.fn || typeof window.jQuery.fn.ripples !== "function") {
+
+          if (
+            !window.jQuery ||
+            !window.jQuery.fn ||
+            typeof window.jQuery.fn.ripples !== "function"
+          ) {
             console.warn("jQuery ripples plugin not available.");
             return;
           }
 
           var $ripple = window.jQuery("#ripple");
+
           if ($ripple.length === 0) {
             return;
           }
 
+          var options = {
+            resolution: 512,
+            dropRadius: 20,
+            perturbance: 0.01
+          };
+
           try {
-            $ripple.ripples({
-              resolution: 512,
-              dropRadius: 20,
-              perturbance: 0.01,
-            });
+            $ripple.ripples(options);
+
+            // Occasionally trigger random drops to keep the surface moving
+            setInterval(function randomDrop() {
+              if (!initialised) {
+                return;
+              }
+              var width = $ripple.outerWidth();
+              var height = $ripple.outerHeight();
+              try {
+                $ripple.ripples("drop", Math.random() * width, Math.random() * height, 20, 0.04);
+              } catch (dropError) {
+                console.warn("Ripple drop failed:", dropError);
+              }
+            }, 2800);
+
             initialised = true;
           } catch (error) {
             console.error("Failed to initialise ripples effect:", error);
