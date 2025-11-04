@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -328,8 +328,9 @@
    CONFIG
 ========================= */
       const API_KEY = "AIzaSyBNBAF3eMqk8_XQtdCAmhmOz0R-3wLYOFI"; // ðŸ” Use HTTP referrer restrictions in Google console
+      // const MODEL = "gemini-2.5-flash-image"; // Image generation model
       const MODEL = "gemini-2.0-flash-preview-image-generation"; // Image generation model
-      const FIXED_TEXT = "Put Your Phone Down"; // Your fixed headline
+      // const FIXED_TEXT = "Put Your Phone Down"; // Your fixed headline
       const DEBUG = false; // set true to see raw responses
 
       /* =========================
@@ -346,6 +347,7 @@
       const logBox = $("#log");
       const toggleLog = $("#toggleLog");
       let talkHint = $("#talk-hint");
+      let speechDebounceId = 0;
 
       if (talkBtn) {
         talkBtn.style.display = "none";
@@ -401,12 +403,7 @@
    Prompt builder
 ========================= */
       function buildPrompt(userIdea) {
-        return `Create a calm poster background with soft water ripples.
-Include the exact headline text: "${FIXED_TEXT}" (clear, legible).
-Incorporate this idea from the user: ${
-          userIdea || "keep it abstract and minimal"
-        }
-Style: minimal, pastel blues, 3:4 aspect ratio, ample whitespace for the title.`;
+        return `Create dreamy abstract image ${userIdea}`;
       }
 
       /* =========================
@@ -415,7 +412,7 @@ Style: minimal, pastel blues, 3:4 aspect ratio, ample whitespace for the title.`
       async function fetchGeminiWithRetry(
         url,
         init,
-        { tries = 4, base = 500, factor = 2, jitter = 0.25 } = {}
+        { tries = 1, base = 500, factor = 2, jitter = 0.25 } = {}
       ) {
         let attempt = 0,
           lastErr;
@@ -511,7 +508,9 @@ Style: minimal, pastel blues, 3:4 aspect ratio, ample whitespace for the title.`
           img.style.display = "block";
         }
         if (cap)
-          cap.textContent = sourceText ? `Prompt source: â€œ${sourceText}â€` : "";
+          cap.textContent = sourceText
+            ? `Prompt source: â€œ${sourceText}â€`
+            : "";
         if (dl) {
           dl.href = dataUrl;
           dl.style.display = "inline-flex";
@@ -530,14 +529,17 @@ Style: minimal, pastel blues, 3:4 aspect ratio, ample whitespace for the title.`
       let lastGenAt = 0;
       const MIN_INTERVAL_MS = 2000;
       async function safeGenerateFrom(text) {
+        const idea = (text || "").trim();
+        if (!idea) return;
         const now = Date.now();
         if (now - lastGenAt < MIN_INTERVAL_MS) return; // ignore rapid repeats
         lastGenAt = now;
 
         setLoading(true);
         try {
-          const result = await generateImageFromPrompt(text);
-          showImage(result, text);
+          const result = await generateImageFromPrompt(idea);
+          console.log("Gemini image result:", result);
+          showImage(result, idea);
         } catch (err) {
           alert(err.message);
           console.error(err);
@@ -637,9 +639,17 @@ Style: minimal, pastel blues, 3:4 aspect ratio, ample whitespace for the title.`
         };
 
         rec.onresult = (e) => {
-          const transcript = e.results[0][0].transcript;
+          const transcript = e.results[0][0].transcript.trim();
+          console.log("Speech transcript:", transcript);
           if (promptBox) promptBox.value = transcript;
-          safeGenerateFrom(transcript);
+          if (!transcript) return;
+          if (speechDebounceId) {
+            clearTimeout(speechDebounceId);
+          }
+          speechDebounceId = window.setTimeout(() => {
+            speechDebounceId = 0;
+            safeGenerateFrom(transcript);
+          }, 400);
         };
 
         rec.onerror = (e) => {
@@ -667,12 +677,12 @@ Style: minimal, pastel blues, 3:4 aspect ratio, ample whitespace for the title.`
         genBtn.addEventListener("click", () => {
           const text = (promptBox?.value || "").trim();
           if (!text)
-            return alert("Type something first, or double tap the water to speak.");
+            return alert(
+              "Type something first, or double tap the water to speak."
+            );
           safeGenerateFrom(text);
         });
       }
     </script>
   </body>
 </html>
-
-
