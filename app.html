@@ -10,9 +10,71 @@
   <body class="app-page">
     <section class="ripple-section">
       <div id="ripple" class="ripples"></div>
+      <figure
+        id="preview"
+        style="margin-top: 1rem; max-width: min(90vw, 720px)"
+      >
+        <img id="img" style="width: 100%; display: none; border-radius: 12px" />
+        <figcaption
+          id="cap"
+          style="opacity: 0.7; margin: 0.5rem 0 0"
+        ></figcaption>
+        <a id="dl" download="gemini-image.png" style="display: none"
+          >⬇️ Download PNG</a
+        >
+      </figure>
     </section>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
+    <button
+      id="enable-audio"
+      style="
+        position: fixed;
+        inset: auto 1rem 1rem auto;
+        z-index: 9999;
+        padding: 0.65rem 1rem;
+        border-radius: 0.75rem;
+        border: none;
+        background: linear-gradient(135deg, #0ea5e9, #4f46e5);
+        color: #fff;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        box-shadow: 0 8px 24px rgba(15, 118, 110, 0.25);
+        cursor: pointer;
+      "
+    >
+      Enable sound
+    </button>
+
+    <button
+      id="talk"
+      style="
+        position: fixed;
+        inset: auto 1rem 1rem auto;
+        z-index: 9999;
+        padding: 0.65rem 1rem;
+        border-radius: 0.75rem;
+        border: none;
+        background: linear-gradient(135deg, #0ea5e9, #4f46e5);
+        color: #fff;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        box-shadow: 0 8px 24px rgba(15, 118, 110, 0.25);
+        cursor: pointer;
+        display: none;
+      "
+    >
+      Double tap to talk
+    </button>
+    <!-- <img
+      id="img"
+      style="max-width: min(90vw, 720px); display: block; margin-top: 1rem"
+    /> -->
+
+    <!-- Water ripple effect -->
+    <script
+      src="https://code.jquery.com/jquery-3.7.1.min.js"
+      crossorigin="anonymous"
+    ></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery.ripples@0.6.3/dist/jquery.ripples.min.js"></script>
     <script>
       (function registerRipples() {
@@ -33,21 +95,17 @@
           }
 
           var $ripple = window.jQuery("#ripple");
-
           if ($ripple.length === 0) {
             return;
           }
 
-          var options = {
-            resolution: 512,
-            dropRadius: 20,
-            perturbance: 0.01
-          };
-
           try {
-            $ripple.ripples(options);
+            $ripple.ripples({
+              resolution: 512,
+              dropRadius: 20,
+              perturbance: 0.01,
+            });
 
-            // Occasionally trigger random drops to keep the surface moving
             setInterval(function randomDrop() {
               if (!initialised) {
                 return;
@@ -55,11 +113,17 @@
               var width = $ripple.outerWidth();
               var height = $ripple.outerHeight();
               try {
-                $ripple.ripples("drop", Math.random() * width, Math.random() * height, 20, 0.04);
+                $ripple.ripples(
+                  "drop",
+                  Math.random() * width,
+                  Math.random() * height,
+                  16,
+                  0.035
+                );
               } catch (dropError) {
                 console.warn("Ripple drop failed:", dropError);
               }
-            }, 2800);
+            }, 3200);
 
             initialised = true;
           } catch (error) {
@@ -75,5 +139,540 @@
         });
       })();
     </script>
+    <!-- Water ripple audio -->
+    <script>
+      window.addEventListener("DOMContentLoaded", function calmWaterAudio() {
+        const enableButton = document.getElementById("enable-audio");
+        if (!enableButton) {
+          return;
+        }
+
+        let ctx;
+        let masterGain;
+        let noiseGain;
+        let dryGain;
+        let wetGain;
+        let filter;
+        let shelf;
+        let delayNode;
+        let feedbackGain;
+        let noiseSource;
+        let filterLfo;
+        let filterLfoDepth;
+        let swellLfo;
+        let swellLfoDepth;
+
+        const BASE_VOLUME = 0.55;
+
+        function createNoiseBuffer(context) {
+          const duration = 4; // seconds
+          const buffer = context.createBuffer(
+            1,
+            context.sampleRate * duration,
+            context.sampleRate
+          );
+          const data = buffer.getChannelData(0);
+          let accumulator = 0;
+          for (let i = 0; i < data.length; i += 1) {
+            const white = Math.random() * 2 - 1;
+            accumulator = accumulator * 0.993 + white * 0.007;
+            data[i] = accumulator;
+          }
+          return buffer;
+        }
+
+        function buildGraph() {
+          masterGain = ctx.createGain();
+          masterGain.gain.value = BASE_VOLUME;
+          masterGain.connect(ctx.destination);
+
+          filter = ctx.createBiquadFilter();
+          filter.type = "lowpass";
+          filter.frequency.value = 980;
+          filter.Q.value = 1.05;
+
+          shelf = ctx.createBiquadFilter();
+          shelf.type = "highshelf";
+          shelf.frequency.value = 2600;
+          shelf.gain.value = -7;
+
+          noiseGain = ctx.createGain();
+          noiseGain.gain.value = 0.24;
+
+          dryGain = ctx.createGain();
+          dryGain.gain.value = 0.68;
+
+          wetGain = ctx.createGain();
+          wetGain.gain.value = 0.2;
+
+          delayNode = ctx.createDelay(4);
+          delayNode.delayTime.value = 1.6;
+
+          feedbackGain = ctx.createGain();
+          feedbackGain.gain.value = 0.3;
+
+          noiseGain.connect(filter);
+          filter.connect(shelf);
+
+          shelf.connect(dryGain);
+          dryGain.connect(masterGain);
+
+          shelf.connect(delayNode);
+          delayNode.connect(feedbackGain);
+          feedbackGain.connect(delayNode);
+          delayNode.connect(wetGain);
+          wetGain.connect(masterGain);
+
+          filterLfo = ctx.createOscillator();
+          filterLfo.type = "sine";
+          filterLfo.frequency.value = 0.08;
+
+          filterLfoDepth = ctx.createGain();
+          filterLfoDepth.gain.value = 220;
+
+          filterLfo.connect(filterLfoDepth);
+          filterLfoDepth.connect(filter.frequency);
+
+          swellLfo = ctx.createOscillator();
+          swellLfo.type = "sine";
+          swellLfo.frequency.value = 0.03;
+
+          swellLfoDepth = ctx.createGain();
+          swellLfoDepth.gain.value = 0.08;
+
+          swellLfo.connect(swellLfoDepth);
+          swellLfoDepth.connect(masterGain.gain);
+
+          filterLfo.start();
+          swellLfo.start();
+        }
+
+        function startNoise() {
+          if (noiseSource) {
+            try {
+              noiseSource.stop();
+            } catch (error) {
+              console.warn("Noise stop failed", error);
+            }
+            noiseSource.disconnect();
+          }
+
+          const buffer = createNoiseBuffer(ctx);
+          noiseSource = ctx.createBufferSource();
+          noiseSource.buffer = buffer;
+          noiseSource.loop = true;
+          noiseSource.connect(noiseGain);
+          noiseSource.start();
+        }
+
+        async function startAudio() {
+          if (!ctx) {
+            ctx = new (window.AudioContext || window.webkitAudioContext)();
+          }
+
+          if (!masterGain) {
+            buildGraph();
+            startNoise();
+          } else if (!noiseSource) {
+            startNoise();
+          }
+
+          if (ctx.state === "suspended") {
+            await ctx.resume();
+          }
+        }
+
+        enableButton.addEventListener("click", async () => {
+          enableButton.disabled = true;
+          enableButton.textContent = "Starting...";
+          try {
+            await startAudio();
+            enableButton.textContent = "Sound Enabled";
+            enableButton.style.transition = "opacity 400ms ease";
+            enableButton.style.opacity = "0";
+            setTimeout(() => {
+              enableButton.style.pointerEvents = "none";
+            }, 450);
+          } catch (error) {
+            console.error("Failed to start calm water audio:", error);
+            enableButton.disabled = false;
+            enableButton.textContent = "Enable sound";
+          }
+        });
+
+        document.addEventListener("visibilitychange", async () => {
+          if (!ctx) {
+            return;
+          }
+          if (document.hidden) {
+            try {
+              await ctx.suspend();
+            } catch (error) {
+              console.warn("Audio suspend failed:", error);
+            }
+          } else if (ctx.state === "suspended") {
+            try {
+              await ctx.resume();
+            } catch (error) {
+              console.warn("Audio resume failed:", error);
+            }
+          }
+        });
+      });
+    </script>
+    <!-- Voice to image -->
+    <script>
+      // app.js - Frontend-only Speech -> Prompt -> Gemini Image (with 429-safe retries)
+
+      /* =========================
+   CONFIG
+========================= */
+      const API_KEY = "AIzaSyBNBAF3eMqk8_XQtdCAmhmOz0R-3wLYOFI"; // ðŸ” Use HTTP referrer restrictions in Google console
+      const MODEL = "gemini-2.0-flash-preview-image-generation"; // Image generation model
+      const FIXED_TEXT = "Put Your Phone Down"; // Your fixed headline
+      const DEBUG = false; // set true to see raw responses
+
+      /* =========================
+   DOM helpers
+========================= */
+      const $ = (s) => document.querySelector(s);
+      const talkBtn = $("#talk");
+      const genBtn = $("#gen");
+      const promptBox = $("#promptBox");
+      const img = $("#img");
+      const cap = $("#cap");
+      const dl = $("#dl");
+      const openTab = $("#open");
+      const logBox = $("#log");
+      const toggleLog = $("#toggleLog");
+      let talkHint = $("#talk-hint");
+
+      if (talkBtn) {
+        talkBtn.style.display = "none";
+        talkBtn.setAttribute("aria-hidden", "true");
+        talkBtn.tabIndex = -1;
+      }
+
+      if (!talkHint) {
+        talkHint = document.createElement("p");
+        talkHint.id = "talk-hint";
+        talkHint.textContent = "Double tap the water to talk.";
+        talkHint.style.cssText = [
+          "position: fixed",
+          "right: 1rem",
+          "bottom: 1rem",
+          "left: auto",
+          "top: auto",
+          "z-index: 9999",
+          "margin: 0",
+          "padding: 0.75rem 1rem",
+          "border-radius: 0.75rem",
+          "background: rgba(15, 118, 110, 0.85)",
+          "color: #fff",
+          "font-size: 0.95rem",
+          "letter-spacing: 0.02em",
+          "box-shadow: 0 8px 24px rgba(15, 118, 110, 0.25)",
+          "max-width: min(76vw, 320px)",
+          "text-align: center",
+        ].join(";");
+        const anchor = talkBtn?.parentElement || document.body;
+        anchor.appendChild(talkHint);
+      }
+
+      function log(...args) {
+        if (!DEBUG) return;
+        logBox.style.display = "block";
+        logBox.textContent +=
+          args
+            .map((a) =>
+              typeof a === "string" ? a : JSON.stringify(a, null, 2)
+            )
+            .join(" ") + "\n";
+        logBox.scrollTop = logBox.scrollHeight;
+      }
+      if (toggleLog) {
+        toggleLog.addEventListener("click", () => {
+          logBox.style.display =
+            logBox.style.display === "block" ? "none" : "block";
+        });
+      }
+
+      /* =========================
+   Prompt builder
+========================= */
+      function buildPrompt(userIdea) {
+        return `Create a calm poster background with soft water ripples.
+Include the exact headline text: "${FIXED_TEXT}" (clear, legible).
+Incorporate this idea from the user: ${
+          userIdea || "keep it abstract and minimal"
+        }
+Style: minimal, pastel blues, 3:4 aspect ratio, ample whitespace for the title.`;
+      }
+
+      /* =========================
+   Robust fetch with retries
+========================= */
+      async function fetchGeminiWithRetry(
+        url,
+        init,
+        { tries = 4, base = 500, factor = 2, jitter = 0.25 } = {}
+      ) {
+        let attempt = 0,
+          lastErr;
+        while (attempt < tries) {
+          const res = await fetch(url, init);
+          if (res.ok) return res;
+
+          // Retry only on rate limit / transient
+          if (res.status !== 429 && res.status !== 503) {
+            const txt = await res.text().catch(() => "");
+            throw new Error(`Gemini error ${res.status}: ${txt}`);
+          }
+
+          const delay = base * Math.pow(factor, attempt);
+          const withJitter = delay * (1 + (Math.random() * 2 - 1) * jitter);
+          await new Promise((r) => setTimeout(r, withJitter));
+          attempt++;
+          lastErr = res;
+        }
+        const txt = lastErr ? await lastErr.text().catch(() => "") : "";
+        throw new Error(
+          `Gemini error ${lastErr?.status || "429"} after retries: ${txt}`
+        );
+      }
+
+      /* =========================
+   Generation controller
+========================= */
+      let IN_FLIGHT = false;
+      async function generateImageFromPrompt(userIdea) {
+        if (IN_FLIGHT) throw new Error("Please wait, generating...");
+        IN_FLIGHT = true;
+        try {
+          const prompt = buildPrompt(userIdea);
+          const body = {
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+          };
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${encodeURIComponent(
+            API_KEY
+          )}`;
+
+          const resp = await fetchGeminiWithRetry(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+
+          const data = await resp.json();
+          console.log("response:", data);
+
+          const parts = data?.candidates?.[0]?.content?.parts || [];
+          const imgPart = parts.find((p) => p.inlineData);
+          if (!imgPart) throw new Error("No image returned by the model.");
+
+          const mime = imgPart.inlineData.mimeType || "image/png";
+          const dataUrl = `data:${mime};base64,${imgPart.inlineData.data}`;
+          return { dataUrl, prompt };
+        } finally {
+          IN_FLIGHT = false;
+        }
+      }
+
+      let isGenerating = false;
+
+      function refreshTalkHint() {
+        if (!talkHint) return;
+        if (isGenerating) {
+          talkHint.textContent = "Generating image...";
+        } else if (recording || startPending) {
+          talkHint.textContent = "Listening... double tap again to stop.";
+        } else {
+          talkHint.textContent = "Double tap the water to talk.";
+        }
+      }
+
+      function setLoading(isLoading) {
+        isGenerating = isLoading;
+        if (talkBtn) {
+          talkBtn.disabled = isLoading;
+        }
+        if (genBtn) {
+          genBtn.disabled = isLoading;
+          genBtn.textContent = isLoading
+            ? "â³ generatingâ€¦"
+            : "Generate from text";
+        }
+        refreshTalkHint();
+      }
+
+      function showImage({ dataUrl, prompt }, sourceText) {
+        if (img) {
+          img.src = dataUrl;
+          img.style.display = "block";
+        }
+        if (cap)
+          cap.textContent = sourceText ? `Prompt source: â€œ${sourceText}â€` : "";
+        if (dl) {
+          dl.href = dataUrl;
+          dl.style.display = "inline-flex";
+        }
+        if (openTab) {
+          openTab.href = dataUrl;
+          openTab.style.display = "inline-flex";
+        }
+        // Optional: auto-open new tab
+        // window.open(dataUrl, "_blank");
+      }
+
+      /* =========================
+   Throttle user actions
+========================= */
+      let lastGenAt = 0;
+      const MIN_INTERVAL_MS = 2000;
+      async function safeGenerateFrom(text) {
+        const now = Date.now();
+        if (now - lastGenAt < MIN_INTERVAL_MS) return; // ignore rapid repeats
+        lastGenAt = now;
+
+        setLoading(true);
+        try {
+          const result = await generateImageFromPrompt(text);
+          showImage(result, text);
+        } catch (err) {
+          alert(err.message);
+          console.error(err);
+          log("error:", err);
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      /* =========================
+   Web Speech API (browser)
+========================= */
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      let rec = null;
+      let recording = false;
+      let startPending = false;
+
+      if (SR) {
+        rec = new SR();
+        rec.lang = "en-US";
+        rec.interimResults = false;
+
+        const tapSurface = $("#ripple") || document.body;
+        const DOUBLE_TAP_MS = 320;
+        let lastTapAt = 0;
+        let tapTimeoutId = 0;
+
+        function requestStart() {
+          if (!rec) return;
+          startPending = true;
+          refreshTalkHint();
+          try {
+            rec.start();
+          } catch (startError) {
+            startPending = false;
+            refreshTalkHint();
+            if (startError.name !== "InvalidStateError") {
+              console.warn("Speech start failed:", startError);
+            }
+          }
+        }
+
+        function requestStop() {
+          if (!rec) return;
+          startPending = false;
+          refreshTalkHint();
+          try {
+            rec.stop();
+          } catch (stopError) {
+            if (stopError.name !== "InvalidStateError") {
+              console.warn("Speech stop failed:", stopError);
+            }
+          }
+        }
+
+        function toggleRecognition() {
+          if (recording || startPending) {
+            requestStop();
+          } else {
+            requestStart();
+          }
+        }
+
+        if (tapSurface) {
+          tapSurface.addEventListener(
+            "pointerdown",
+            (event) => {
+              const now = Date.now();
+              const tappedTwice = now - lastTapAt <= DOUBLE_TAP_MS;
+
+              window.clearTimeout(tapTimeoutId);
+              if (tappedTwice) {
+                lastTapAt = 0;
+                event.preventDefault();
+                event.stopPropagation();
+                toggleRecognition();
+              } else {
+                lastTapAt = now;
+                tapTimeoutId = window.setTimeout(() => {
+                  lastTapAt = 0;
+                }, DOUBLE_TAP_MS);
+              }
+            },
+            { passive: false }
+          );
+        }
+
+        rec.onstart = () => {
+          recording = true;
+          startPending = false;
+          refreshTalkHint();
+        };
+        rec.onend = () => {
+          recording = false;
+          startPending = false;
+          refreshTalkHint();
+        };
+
+        rec.onresult = (e) => {
+          const transcript = e.results[0][0].transcript;
+          if (promptBox) promptBox.value = transcript;
+          safeGenerateFrom(transcript);
+        };
+
+        rec.onerror = (e) => {
+          recording = false;
+          startPending = false;
+          refreshTalkHint();
+          alert("Speech error: " + e.error);
+          log("speech error:", e);
+        };
+      } else {
+        if (talkBtn) {
+          talkBtn.disabled = true;
+          talkBtn.title = "Web Speech API not supported in this browser.";
+        }
+        if (talkHint) {
+          talkHint.textContent =
+            "Speech recognition is not supported in this browser.";
+        }
+      }
+
+      /* =========================
+   Generate from typed text
+========================= */
+      if (genBtn) {
+        genBtn.addEventListener("click", () => {
+          const text = (promptBox?.value || "").trim();
+          if (!text)
+            return alert("Type something first, or double tap the water to speak.");
+          safeGenerateFrom(text);
+        });
+      }
+    </script>
   </body>
 </html>
+
+

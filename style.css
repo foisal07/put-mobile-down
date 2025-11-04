@@ -55,6 +55,7 @@ body.app-page {
   background-repeat: no-repeat;
   background-size: cover;
   overflow: hidden;
+  touch-action: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
