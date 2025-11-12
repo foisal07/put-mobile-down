@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Your mind state</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      body.mind-page {
+        min-height: 100vh;
+        margin: 0;
+        background: radial-gradient(circle at top, #0f172a 0%, #020617 60%);
+        color: #f8fafc;
+        font-family: "Inter", "Segoe UI", sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: clamp(1.5rem, 5vw, 3rem);
+      }
+
+      .mind-shell {
+        width: min(96vw, 880px);
+        background: rgba(2, 6, 23, 0.88);
+        border-radius: 24px;
+        padding: clamp(1.5rem, 3vw, 3rem);
+        box-shadow: 0 25px 70px rgba(15, 23, 42, 0.6);
+        text-align: center;
+        backdrop-filter: blur(18px);
+      }
+
+      .mind-shell h1 {
+        margin: 0 0 0.5rem;
+        font-size: clamp(1.9rem, 4vw, 3rem);
+        letter-spacing: 0.02em;
+      }
+
+      .mind-shell p.subtitle {
+        margin: 0 0 2rem;
+        opacity: 0.75;
+        font-size: 1rem;
+      }
+
+      .mind-photo-frame {
+        position: relative;
+        border-radius: 32px;
+        padding: 0;
+        background: transparent;
+        border: none;
+        margin-bottom: 1rem;
+        max-height: min(70vh, 600px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .mind-photo-frame::after {
+        content: "";
+        position: absolute;
+        width: 70%;
+        height: 85%;
+        border-radius: 40px;
+        background: radial-gradient(
+          circle,
+          rgba(99, 102, 241, 0.45),
+          rgba(14, 165, 233, 0.1) 70%,
+          transparent
+        );
+        filter: blur(35px);
+        opacity: 0.7;
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      .mind-photo-frame.mind-photo-empty {
+        font-size: 1rem;
+        font-weight: 600;
+        color: rgba(226, 232, 240, 0.85);
+      }
+
+      #mind-photo {
+        position: relative;
+        z-index: 1;
+        display: block;
+        width: min(78vw, 520px);
+        max-height: min(60vh, 520px);
+        aspect-ratio: 3 / 4;
+        height: auto;
+        object-fit: contain;
+        border-radius: 28px;
+        background: transparent;
+        border: 2px solid rgba(255, 255, 255, 0.35);
+        box-shadow: 0 28px 55px rgba(5, 8, 20, 0.55),
+          0 0 45px rgba(79, 70, 229, 0.55),
+          0 0 25px rgba(14, 165, 233, 0.45);
+      }
+
+      .mind-actions {
+        margin-top: 2rem;
+        display: flex;
+        justify-content: center;
+      }
+
+      .mind-actions a {
+        padding: 0.75rem 1.5rem;
+        border-radius: 999px;
+        text-decoration: none;
+        background: linear-gradient(135deg, #0ea5e9, #6366f1);
+        color: #fff;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        box-shadow: 0 15px 30px rgba(79, 70, 229, 0.35);
+      }
+
+      @media (max-width: 640px) {
+        .mind-shell {
+          padding: 1.5rem 1.25rem;
+        }
+
+        .mind-photo-frame {
+          padding: 0;
+          max-height: 65vh;
+        }
+
+        #mind-photo {
+          width: 90%;
+          max-height: 55vh;
+        }
+      }
+    </style>
+  </head>
+  <body class="mind-page">
+    <main class="mind-shell">
+      <p class="subtitle">Reflection</p>
+      <h1>Your mind state</h1>
+      <div class="mind-photo-frame">
+        <img
+          id="mind-photo"
+          alt="Mind state reflection"
+          decoding="async"
+          loading="lazy"
+        />
+      </div>
+      <div class="mind-actions">
+        <a href="app.html">Return to the water</a>
+      </div>
+    </main>
+
+    <script>
+      (function showRandomMindPhoto() {
+        const photos = [
+          "images/ChatGPT Image Nov 11, 2025, 10_02_12 PM.png",
+          "images/ChatGPT Image Nov 11, 2025, 10_33_39 PM.png",
+        ];
+
+        const img = document.getElementById("mind-photo");
+        const frame = document.querySelector(".mind-photo-frame");
+
+        if (!photos.length) {
+          if (img) {
+            img.remove();
+          }
+          if (frame) {
+            frame.classList.add("mind-photo-empty");
+            frame.textContent = "No reflections available yet.";
+          }
+          return;
+        }
+
+        const choice = photos[Math.floor(Math.random() * photos.length)];
+        if (img) {
+          img.src = choice;
+        }
+
+        if (img && frame) {
+          img.addEventListener("error", () => {
+            frame.classList.add("mind-photo-empty");
+            frame.textContent = "Unable to load that reflection.";
+            img.remove();
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -21,7 +21,6 @@ body.app-page {
   background-color: #000;
   color: #e6f1ff;
   overflow: hidden;
-  cursor: none;
 }
 
 #container {
@@ -51,7 +50,8 @@ body.app-page {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-image: url("./download.png");
+  /* background-image: url("./download.png"); */
+  background-image: url("./cjelly.png");
   background-position: 50%;
   background-repeat: no-repeat;
   background-size: cover;
