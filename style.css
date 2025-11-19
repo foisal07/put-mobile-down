@@ -47,14 +47,14 @@ body.app-page.is-cursor-hidden * {
   transform: translate(-50%, -50%) scale(0.35);
   background: radial-gradient(
     circle,
-    var(--glow-core, rgba(255, 197, 143, 0.96)) 0%,
-    var(--glow-mid, rgba(255, 129, 86, 0.55)) 45%,
-    var(--glow-edge, rgba(41, 10, 17, 0)) 70%
+    var(--glow-core, rgba(167, 243, 255, 0.96)) 0%,
+    var(--glow-mid, rgba(34, 211, 238, 0.55)) 45%,
+    var(--glow-edge, rgba(5, 20, 45, 0)) 70%
   );
   filter: drop-shadow(
-      0 0 16px var(--glow-shadow-strong, rgba(255, 171, 112, 0.85))
+      0 0 16px var(--glow-shadow-strong, rgba(59, 130, 246, 0.75))
     )
-    drop-shadow(0 0 32px var(--glow-shadow-soft, rgba(255, 140, 122, 0.55)));
+    drop-shadow(0 0 32px var(--glow-shadow-soft, rgba(13, 148, 136, 0.5)));
   opacity: 0;
   animation: cursorTrailFade var(--duration, 1200ms) ease-out forwards;
 }
