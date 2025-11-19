@@ -1,15 +1,53 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Put Your Phone Down - App</title>
+    <title>Put Your Phone Down</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="gallery.css" />
   </head>
   <body class="app-page">
+    <div class="cursor-trail" aria-hidden="true"></div>
     <section class="ripple-section">
       <div id="ripple" class="ripples"></div>
+    </section>
+
+    <section
+      id="talk-bowl"
+      class="talk-bowl"
+      aria-hidden="true"
+      aria-label="Double tap to talk to me"
+    >
+      <button
+        id="talk-glow-btn"
+        class="glow-orb"
+        type="button"
+        aria-label="Double tap to talk to me"
+      >
+        <span id="talk-hint" class="sr-only">Double tap to talk to me</span>
+        <div class="container glow-orb__lights" aria-hidden="true">
+          <img
+            id="orange"
+            src="http://matthew.wagerfield.com/parallax/assets/images/light-orange.png"
+            alt=""
+            width="220"
+            height="220"
+            loading="lazy"
+          />
+          <img
+            id="purple"
+            src="http://matthew.wagerfield.com/parallax/assets/images/light-purple.png"
+            alt=""
+            width="220"
+            height="220"
+            loading="lazy"
+          />
+        </div>
+      </button>
+      <p class="glow-orb__caption">
+        Say what you feel by double tapping me
+      </p>
     </section>
 
     <button
@@ -27,6 +65,7 @@
         letter-spacing: 0.03em;
         box-shadow: 0 8px 24px rgba(15, 118, 110, 0.25);
         cursor: pointer;
+        display: none;
       "
     >
       Enable sound
@@ -399,26 +438,11 @@
           talkHint = document.createElement("p");
           talkHint.id = "talk-hint";
           talkHint.textContent = "Double tap the water to talk.";
-          talkHint.style.cssText = [
-            "position: fixed",
-            "right: 1rem",
-            "bottom: 1rem",
-            "left: auto",
-            "top: auto",
-            "z-index: 9999",
-            "margin: 0",
-            "padding: 0.75rem 1rem",
-            "border-radius: 0.75rem",
-            "background: rgba(15, 118, 110, 0.85)",
-            "color: #fff",
-            "font-size: 0.95rem",
-            "letter-spacing: 0.02em",
-            "box-shadow: 0 8px 24px rgba(15, 118, 110, 0.25)",
-            "max-width: min(76vw, 320px)",
-            "text-align: center",
-          ].join(";");
+          talkHint.className = "sr-only";
           const anchor = talkBtn?.parentElement || document.body;
           anchor.appendChild(talkHint);
+        } else {
+          talkHint.classList.add("sr-only");
         }
 
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -435,6 +459,7 @@
         }
 
         const tapSurface = document.querySelector("#ripple") || document.body;
+        const talkGlowBtn = document.getElementById("talk-glow-btn");
         let rec = null;
         let recording = false;
         let startPending = false;
@@ -444,7 +469,7 @@
           if (recording || startPending) {
             talkHint.textContent = "Listening... double tap again to stop.";
           } else {
-            talkHint.textContent = "Double tap the water to talk.";
+            talkHint.textContent = "Double tap the glowing orb or water to talk.";
           }
         }
 
@@ -453,8 +478,7 @@
         rec.interimResults = false;
 
         const DOUBLE_TAP_MS = 320;
-        let lastTapAt = 0;
-        let tapTimeoutId = 0;
+        const doubleTapState = new WeakMap();
 
         function requestStart() {
           if (!rec) return;
@@ -492,29 +516,42 @@
           }
         }
 
-        if (tapSurface) {
-          tapSurface.addEventListener(
-            "pointerdown",
-            (event) => {
-              const now = Date.now();
-              const tappedTwice = now - lastTapAt <= DOUBLE_TAP_MS;
-
-              window.clearTimeout(tapTimeoutId);
-              if (tappedTwice) {
-                lastTapAt = 0;
-                event.preventDefault();
-                event.stopPropagation();
-                toggleRecognition();
-              } else {
-                lastTapAt = now;
-                tapTimeoutId = window.setTimeout(() => {
-                  lastTapAt = 0;
-                }, DOUBLE_TAP_MS);
-              }
-            },
-            { passive: false }
-          );
+        function resetDoubleTapState(target) {
+          const state = doubleTapState.get(target);
+          if (!state) {
+            return;
+          }
+          window.clearTimeout(state.timeoutId);
+          doubleTapState.delete(target);
         }
+
+        function handlePointerDoubleTap(event) {
+          const target = event.currentTarget || event.target;
+          const now = Date.now();
+          const state = doubleTapState.get(target);
+
+          if (state && now - state.lastTapAt <= DOUBLE_TAP_MS) {
+            resetDoubleTapState(target);
+            event.preventDefault();
+            event.stopPropagation();
+            toggleRecognition();
+            return;
+          }
+
+          resetDoubleTapState(target);
+          const timeoutId = window.setTimeout(() => {
+            doubleTapState.delete(target);
+          }, DOUBLE_TAP_MS);
+
+          doubleTapState.set(target, { lastTapAt: now, timeoutId });
+        }
+
+        [tapSurface, talkGlowBtn].forEach((target) => {
+          if (!target) return;
+          target.addEventListener("pointerdown", handlePointerDoubleTap, {
+            passive: false,
+          });
+        });
 
         rec.onstart = () => {
           recording = true;
@@ -551,7 +588,226 @@
         refreshTalkHint();
       })();
     </script>
+    <script>
+      (function setupTalkBowlReveal() {
+        const prompt = document.getElementById("talk-bowl");
+        if (!prompt) {
+          return;
+        }
+
+        const MIN_DELAY_MS = 10000;
+        const MAX_DELAY_MS = 30000;
+        let timerStarted = false;
+        let timerId = 0;
+        let hasRevealed = false;
+
+        function revealPrompt() {
+          if (hasRevealed) {
+            return;
+          }
+
+          hasRevealed = true;
+          window.clearTimeout(timerId);
+          prompt.setAttribute("data-state", "visible");
+          prompt.removeAttribute("aria-hidden");
+          document.removeEventListener("pointermove", handlePointerMove, true);
+        }
+
+        function scheduleReveal() {
+          const delay =
+            MIN_DELAY_MS + Math.random() * (MAX_DELAY_MS - MIN_DELAY_MS);
+          timerId = window.setTimeout(revealPrompt, delay);
+        }
+
+        function handlePointerMove() {
+          if (hasRevealed || timerStarted) {
+            if (hasRevealed) {
+              document.removeEventListener("pointermove", handlePointerMove, true);
+            }
+            return;
+          }
+
+          timerStarted = true;
+          scheduleReveal();
+        }
+
+        document.addEventListener("pointermove", handlePointerMove, {
+          passive: true,
+          capture: true,
+        });
+
+        window.addEventListener("beforeunload", () => {
+          window.clearTimeout(timerId);
+        });
+      })();
+    </script>
+    <script>
+      (function initBioluminescentCursor() {
+        const trailRoot = document.querySelector(".cursor-trail");
+        if (!trailRoot || typeof window.matchMedia !== "function") {
+          return;
+        }
+
+        const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+        if (motionQuery.matches) {
+          return;
+        }
+
+        const COLOR_PALETTE = [
+          {
+            core: "rgba(255, 197, 143, 0.96)",
+            mid: "rgba(255, 129, 86, 0.55)",
+            edge: "rgba(41, 10, 17, 0)",
+            shadowStrong: "rgba(255, 171, 112, 0.85)",
+            shadowSoft: "rgba(255, 140, 122, 0.5)",
+          },
+          {
+            core: "rgba(255, 188, 224, 0.95)",
+            mid: "rgba(244, 114, 182, 0.5)",
+            edge: "rgba(62, 6, 29, 0)",
+            shadowStrong: "rgba(251, 113, 133, 0.8)",
+            shadowSoft: "rgba(244, 114, 182, 0.45)",
+          },
+          {
+            core: "rgba(45, 212, 191, 0.95)",
+            mid: "rgba(16, 185, 129, 0.4)",
+            edge: "rgba(2, 44, 34, 0)",
+            shadowStrong: "rgba(94, 234, 212, 0.7)",
+            shadowSoft: "rgba(45, 212, 191, 0.45)",
+          },
+          {
+            core: "rgba(191, 183, 255, 0.95)",
+            mid: "rgba(167, 139, 250, 0.45)",
+            edge: "rgba(18, 8, 43, 0)",
+            shadowStrong: "rgba(196, 181, 253, 0.8)",
+            shadowSoft: "rgba(167, 139, 250, 0.45)",
+          },
+          {
+            core: "rgba(171, 219, 255, 0.9)",
+            mid: "rgba(56, 189, 248, 0.4)",
+            edge: "rgba(8, 26, 46, 0)",
+            shadowStrong: "rgba(94, 234, 212, 0.7)",
+            shadowSoft: "rgba(59, 130, 246, 0.45)",
+          },
+          {
+            core: "rgba(236, 72, 153, 0.95)",
+            mid: "rgba(244, 114, 182, 0.45)",
+            edge: "rgba(76, 5, 25, 0)",
+            shadowStrong: "rgba(249, 168, 212, 0.7)",
+            shadowSoft: "rgba(244, 114, 182, 0.4)",
+          },
+        ];
+
+        document.body.classList.add("is-cursor-hidden");
+
+        const MAX_PARTICLES = 80;
+        const MIN_FRAME_GAP = 12;
+        let lastStamp = 0;
+
+        function trimParticles() {
+          while (trailRoot.children.length > MAX_PARTICLES) {
+            trailRoot.removeChild(trailRoot.firstChild);
+          }
+        }
+
+        function createParticle(x, y, energy) {
+          const palette =
+            COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)];
+          const size = 18 + Math.random() * 18 * energy;
+          const duration = 950 + Math.random() * 550;
+
+          const particle = document.createElement("span");
+          particle.className = "cursor-trail__particle";
+          particle.style.setProperty("--x", `${x}px`);
+          particle.style.setProperty("--y", `${y}px`);
+          particle.style.setProperty("--size", `${size.toFixed(1)}px`);
+          particle.style.setProperty("--duration", `${duration.toFixed(0)}ms`);
+          particle.style.setProperty("--glow-core", palette.core);
+          particle.style.setProperty("--glow-mid", palette.mid);
+          particle.style.setProperty("--glow-edge", palette.edge);
+          particle.style.setProperty("--glow-shadow-strong", palette.shadowStrong);
+          particle.style.setProperty("--glow-shadow-soft", palette.shadowSoft);
+
+          trailRoot.appendChild(particle);
+          trimParticles();
+
+          window.setTimeout(() => {
+            particle.remove();
+          }, duration + 120);
+        }
+
+        function spawnBurst(event, extraEnergy) {
+          const baseEnergy = Math.max(event.pressure || 0.35, 0.35) + extraEnergy;
+          const count = Math.ceil(baseEnergy * 3);
+
+          for (let i = 0; i < count; i++) {
+            const radius = Math.random() * (18 + extraEnergy * 14);
+            const theta = Math.random() * Math.PI * 2;
+            const x = event.clientX + Math.cos(theta) * radius;
+            const y = event.clientY + Math.sin(theta) * radius;
+            createParticle(x, y, baseEnergy);
+          }
+        }
+
+        function handlePointerMove(event) {
+          if (event.pointerType === "touch") {
+            return;
+          }
+
+          const now = performance.now();
+          if (now - lastStamp < MIN_FRAME_GAP) {
+            return;
+          }
+
+          lastStamp = now;
+          spawnBurst(event, 0);
+        }
+
+        function handlePointerDown(event) {
+          if (event.pointerType === "touch") {
+            return;
+          }
+
+          spawnBurst(event, 1);
+        }
+
+        function resetTrail() {
+          trailRoot.replaceChildren();
+        }
+
+        window.addEventListener("pointermove", handlePointerMove, {
+          passive: true,
+        });
+        window.addEventListener("pointerdown", handlePointerDown, {
+          passive: true,
+        });
+        window.addEventListener("pointerleave", resetTrail, { passive: true });
+        window.addEventListener("blur", resetTrail);
+        document.addEventListener("visibilitychange", () => {
+          if (document.hidden) {
+            resetTrail();
+          }
+        });
+
+        const handleMotionChange = (event) => {
+          if (!event.matches) {
+            return;
+          }
+
+          document.body.classList.remove("is-cursor-hidden");
+          window.removeEventListener("pointermove", handlePointerMove);
+          window.removeEventListener("pointerdown", handlePointerDown);
+          window.removeEventListener("pointerleave", resetTrail);
+          window.removeEventListener("blur", resetTrail);
+          resetTrail();
+        };
+
+        if (typeof motionQuery.addEventListener === "function") {
+          motionQuery.addEventListener("change", handleMotionChange);
+        } else if (typeof motionQuery.addListener === "function") {
+          motionQuery.addListener(handleMotionChange);
+        }
+      })();
+    </script>
   </body>
 </html>
-
-

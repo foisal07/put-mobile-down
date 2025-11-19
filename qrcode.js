@@ -1,17 +1,3 @@
-const qrcodeContainer = document.getElementById('qrcode');
-
-// Generate a QR code that points to the app entry page
-const appUrl = new URL('app.html', window.location.href).href;
-
-new QRCode(qrcodeContainer, {
-  text: appUrl,
-  width: 256,
-  height: 256,
-  colorDark: '#000000',
-  colorLight: '#ffffff',
-  correctLevel: QRCode.CorrectLevel.H
-});
-
 const slideshowImage = document.getElementById('slideshow-image');
 const slideshowSources = [
   'https://media.istockphoto.com/id/1344461297/hu/vektor/hatalmas-elef%C3%A1nt-lebeg-vagy-rep%C3%BCl-l%C3%A9gg%C3%B6mbbel-%C3%A9g-%C3%A9s-felh%C5%91k-h%C3%A1tter%C3%A9vel-fantasztikus-sz%C3%BCrre%C3%A1lis.jpg?s=612x612&w=0&k=20&c=Ts8-lKcp5K2TGc8FFpE8r9WRrHDClEh55UsuvKdurS0=',
