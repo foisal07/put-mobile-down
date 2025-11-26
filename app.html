@@ -46,7 +46,7 @@
         </div>
       </button>
       <p id="glow-orb-caption" class="glow-orb__caption">
-        Say what you feel like
+        Say what you feel like by double tapping me
       </p>
     </section>
 
@@ -463,6 +463,7 @@
         let rec = null;
         let recording = false;
         let startPending = false;
+        let redirectTimeout = null;
 
         const caption = document.getElementById("glow-orb-caption");
 
@@ -569,6 +570,7 @@
         });
 
         rec.onstart = () => {
+          if (redirectTimeout) clearTimeout(redirectTimeout);
           recording = true;
           startPending = false;
           mindRedirectPending = false;
@@ -578,10 +580,17 @@
         rec.onend = () => {
           recording = false;
           startPending = false;
-          refreshTalkHint();
+          
           if (mindRedirectPending) {
-            mindRedirectPending = false;
-            window.location.href = MIND_PAGE_URL;
+            // Wait 3s after speech ends, then fade out and redirect
+            redirectTimeout = setTimeout(() => {
+              document.body.classList.add("page-transition-fade-out");
+              setTimeout(() => {
+                window.location.href = MIND_PAGE_URL;
+              }, 2000);
+            }, 3000);
+          } else {
+            refreshTalkHint();
           }
         };
 
