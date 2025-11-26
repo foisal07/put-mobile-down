@@ -96,6 +96,24 @@
       style="max-width: min(90vw, 720px); display: block; margin-top: 1rem"
     /> -->
 
+    <div id="mind-overlay" class="mind-overlay" aria-hidden="true">
+      <main class="mind-shell">
+        <p class="subtitle">Reflection</p>
+        <h1>Your mind state</h1>
+        <div class="mind-photo-frame">
+          <img
+            id="mind-photo"
+            alt="Mind state reflection"
+            decoding="async"
+            loading="lazy"
+          />
+        </div>
+        <div class="mind-actions">
+          <button id="return-water-btn" type="button">Return to the water</button>
+        </div>
+      </main>
+    </div>
+
     <!-- Water ripple effect -->
     <script
       src="https://code.jquery.com/jquery-3.7.1.min.js"
@@ -422,11 +440,55 @@
     <!-- Voice capture -->
     <script>
       (function voiceCapture() {
-        const MIND_PAGE_URL = "mind.html";
         const $ = (s) => document.querySelector(s);
         const talkBtn = $("#talk");
         let talkHint = $("#talk-hint");
         let mindRedirectPending = false;
+        
+        // Mind Overlay Elements
+        const mindOverlay = document.getElementById("mind-overlay");
+        const mindPhoto = document.getElementById("mind-photo");
+        const returnWaterBtn = document.getElementById("return-water-btn");
+        const mindFrame = document.querySelector(".mind-photo-frame");
+
+        const photos = [
+          "images/ChatGPT Image Nov 11, 2025, 10_02_12 PM.png",
+          "images/ChatGPT Image Nov 11, 2025, 10_33_39 PM.png",
+        ];
+
+        function showMindOverlay() {
+            if (!mindOverlay) return;
+            
+            // Pick random photo
+            if (photos.length && mindPhoto) {
+                const choice = photos[Math.floor(Math.random() * photos.length)];
+                mindPhoto.src = choice;
+                mindPhoto.onerror = () => {
+                    if (mindFrame) {
+                        mindFrame.classList.add("mind-photo-empty");
+                        mindFrame.textContent = "Unable to load that reflection.";
+                        mindPhoto.remove();
+                    }
+                };
+            } else if (mindFrame) {
+                 if (mindPhoto) mindPhoto.remove();
+                 mindFrame.classList.add("mind-photo-empty");
+                 mindFrame.textContent = "No reflections available yet.";
+            }
+
+            mindOverlay.classList.add("visible");
+            mindOverlay.setAttribute("aria-hidden", "false");
+        }
+
+        function hideMindOverlay() {
+            if (!mindOverlay) return;
+            mindOverlay.classList.remove("visible");
+            mindOverlay.setAttribute("aria-hidden", "true");
+        }
+
+        if (returnWaterBtn) {
+            returnWaterBtn.addEventListener("click", hideMindOverlay);
+        }
 
         if (talkBtn) {
           talkBtn.style.display = "none";
@@ -582,12 +644,9 @@
           startPending = false;
           
           if (mindRedirectPending) {
-            // Wait 3s after speech ends, then fade out and redirect
+            // Wait 3s after speech ends, then fade in the overlay
             redirectTimeout = setTimeout(() => {
-              document.body.classList.add("page-transition-fade-out");
-              setTimeout(() => {
-                window.location.href = MIND_PAGE_URL;
-              }, 2000);
+              showMindOverlay();
             }, 3000);
           } else {
             refreshTalkHint();
