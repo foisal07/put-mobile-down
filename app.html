@@ -525,10 +525,8 @@
             mindOverlay.classList.remove("visible");
             mindOverlay.setAttribute("aria-hidden", "true");
             
-            // Reload page after transition to restore full initial state
-            setTimeout(() => {
-                 window.location.reload();
-            }, 2000);
+            // Reload page immediately to restore full initial state
+            window.location.reload();
         }
 
         if (returnWaterBtn) {
@@ -592,7 +590,7 @@
             updateCaption("I'm listening...");
           } else {
             talkHint.textContent = "Double tap the glowing orb or water to talk.";
-            updateCaption("Say what you feel like by double tapping me");
+            updateCaption("Say your first name and how you feel like by double tapping me. I'll show your mind space.");
           }
         }
 
