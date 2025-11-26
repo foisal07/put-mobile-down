@@ -46,7 +46,7 @@
         </div>
       </button>
       <p id="glow-orb-caption" class="glow-orb__caption">
-        Say what you feel like by double tapping me
+        Say your name and how you feel like by double tapping me. I'll show your mind space.
       </p>
     </section>
 
@@ -103,6 +103,8 @@
         playsinline
         src="images/Dixit video1.mp4"
       ></video>
+
+      <h1 id="mind-user-caption" class="mind-user-caption"></h1>
 
       <div class="return-orb-container">
         <button
@@ -473,9 +475,21 @@
             "images/Dixit video1.mp4",
             "images/dixit video2.mp4"
         ];
+        
+        let userFirstWord = "";
 
         function showMindOverlay() {
             if (!mindOverlay) return;
+            
+            // Update caption with first word
+            const captionEl = document.getElementById("mind-user-caption");
+            if (captionEl && userFirstWord) {
+                const name = userFirstWord.charAt(0).toUpperCase() + userFirstWord.slice(1);
+                captionEl.textContent = `${name}'s Mind Space Now`;
+            } else if (captionEl) {
+                 captionEl.textContent = "Your Mind Space Now";
+            }
+
             mindOverlay.classList.add("visible");
             mindOverlay.setAttribute("aria-hidden", "false");
             
@@ -496,9 +510,11 @@
             if (!mindOverlay) return;
             
             // Reset UI state immediately so it looks right during fade out
+            // Reset UI state immediately so it looks right during fade out
             recording = false;
             startPending = false;
             mindRedirectPending = false;
+            userFirstWord = ""; // Reset captured word
             if (redirectTimeout) {
                 clearTimeout(redirectTimeout);
                 redirectTimeout = null;
@@ -685,6 +701,9 @@
         rec.onresult = (e) => {
           const transcript = e.results[0][0].transcript.trim();
           console.log("Speech transcript:", transcript);
+          if (transcript) {
+              userFirstWord = transcript.split(" ")[0];
+          }
           mindRedirectPending = Boolean(transcript);
         };
 
