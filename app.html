@@ -45,8 +45,8 @@
           />
         </div>
       </button>
-      <p class="glow-orb__caption">
-        Say what you feel by double tapping me
+      <p id="glow-orb-caption" class="glow-orb__caption">
+        Say what you feel like
       </p>
     </section>
 
@@ -464,12 +464,27 @@
         let recording = false;
         let startPending = false;
 
+        const caption = document.getElementById("glow-orb-caption");
+
+        function updateCaption(text) {
+          if (!caption) return;
+          if (caption.textContent.trim() === text) return;
+
+          caption.classList.add("changing");
+          setTimeout(() => {
+            caption.textContent = text;
+            caption.classList.remove("changing");
+          }, 300);
+        }
+
         function refreshTalkHint() {
           if (!talkHint) return;
           if (recording || startPending) {
             talkHint.textContent = "Listening... double tap again to stop.";
+            updateCaption("I'm listening...");
           } else {
             talkHint.textContent = "Double tap the glowing orb or water to talk.";
+            updateCaption("Say what you feel like");
           }
         }
 

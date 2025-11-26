@@ -190,6 +190,12 @@ body.app-page.is-cursor-hidden * {
   color: rgba(255, 255, 255, 0.75);
   text-shadow: 0 0 6px rgba(124, 58, 237, 0.55),
     0 0 16px rgba(59, 130, 246, 0.4);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.glow-orb__caption.changing {
+  opacity: 0;
+  transform: translateY(5px);
 }
 
 @-webkit-keyframes phase {
