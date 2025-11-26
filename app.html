@@ -525,8 +525,10 @@
             mindOverlay.classList.remove("visible");
             mindOverlay.setAttribute("aria-hidden", "true");
             
-            // Reload page immediately to restore full initial state
-            window.location.reload();
+            // Reload page after transition to restore full initial state
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
         }
 
         if (returnWaterBtn) {
