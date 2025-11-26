@@ -99,8 +99,6 @@
     <div id="mind-overlay" class="mind-overlay" aria-hidden="true">
       <video
         class="mind-bg-video"
-        autoplay
-        muted
         loop
         playsinline
         src="images/Dixit video1.mp4"
@@ -479,6 +477,8 @@
             // Ensure video plays if it was paused or not started
             const video = mindOverlay.querySelector("video");
             if (video) {
+                video.muted = false;
+                video.currentTime = 0;
                 video.play().catch(e => console.warn("Video play failed:", e));
             }
         }
