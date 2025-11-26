@@ -157,11 +157,15 @@ body.app-page.is-cursor-hidden * {
   height: auto;
 }
 
+.talk-bowl .orb-light-orange,
+.return-orb-container .orb-light-orange,
 .talk-bowl #orange {
   animation: phase 6s ease-in-out infinite;
   filter: drop-shadow(0 0 15px rgba(255, 149, 0, 0.85));
 }
 
+.talk-bowl .orb-light-purple,
+.return-orb-container .orb-light-purple,
 .talk-bowl #purple {
   animation: phase 12s ease-in-out infinite;
   mix-blend-mode: screen;
@@ -240,7 +244,9 @@ body.app-page.is-cursor-hidden * {
   }
 
   .talk-bowl #orange,
-  .talk-bowl #purple {
+  .talk-bowl #purple,
+  .orb-light-orange,
+  .orb-light-purple {
     animation: none !important;
   }
 
@@ -470,4 +476,35 @@ body.app-page.is-cursor-hidden * {
     width: 90%;
     max-height: 55vh;
   }
+
+  .return-orb-container {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 80px;
+  }
+}
+
+.return-orb-container {
+  position: absolute;
+  bottom: 3rem;
+  right: 3rem;
+  width: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2010;
+  pointer-events: auto;
+}
+
+.return-orb-container .container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1/1;
+}
+
+.return-orb-container img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: auto;
 }
