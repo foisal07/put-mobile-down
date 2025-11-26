@@ -493,6 +493,16 @@
             if (video) {
                 video.pause();
             }
+
+            // Reset app state to default
+            recording = false;
+            startPending = false;
+            mindRedirectPending = false;
+            if (redirectTimeout) {
+                clearTimeout(redirectTimeout);
+                redirectTimeout = null;
+            }
+            refreshTalkHint();
         }
 
         if (returnWaterBtn) {
@@ -556,7 +566,7 @@
             updateCaption("I'm listening...");
           } else {
             talkHint.textContent = "Double tap the glowing orb or water to talk.";
-            updateCaption("Say what you feel like");
+            updateCaption("Say what you feel like by double tapping me");
           }
         }
 
