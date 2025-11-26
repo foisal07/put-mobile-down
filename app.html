@@ -468,6 +468,11 @@
         // Mind Overlay Elements
         const mindOverlay = document.getElementById("mind-overlay");
         const returnWaterBtn = document.getElementById("return-water-btn");
+        
+        const mindVideos = [
+            "images/Dixit video1.mp4",
+            "images/dixit video2.mp4"
+        ];
 
         function showMindOverlay() {
             if (!mindOverlay) return;
@@ -477,6 +482,10 @@
             // Ensure video plays if it was paused or not started
             const video = mindOverlay.querySelector("video");
             if (video) {
+                // Pick random video
+                const randomVideo = mindVideos[Math.floor(Math.random() * mindVideos.length)];
+                video.src = randomVideo;
+                
                 video.muted = false;
                 video.currentTime = 0;
                 video.play().catch(e => console.warn("Video play failed:", e));
