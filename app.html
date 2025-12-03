@@ -691,10 +691,14 @@
           startPending = false;
           
           if (mindRedirectPending) {
-            updateCaption("Generating your mind space...");
-            // Wait 3s after speech ends, then fade in the overlay
+            // Wait 3s before showing the generating caption
             redirectTimeout = setTimeout(() => {
-              showMindOverlay();
+              updateCaption("Generating your mind space...");
+              
+              // Wait another 3s before showing the overlay
+              redirectTimeout = setTimeout(() => {
+                showMindOverlay();
+              }, 3000);
             }, 3000);
           } else {
             refreshTalkHint();
