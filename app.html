@@ -471,14 +471,29 @@
         const returnWaterBtn = document.getElementById("return-water-btn");
         
         const mindVideos = [
-            "images/Dixit video1.mp4",
-            "images/dixit video2.mp4",
-            "images/dixitvideo3.mp4",
-            "images/dixitvideo4.mp4",
-            "images/dixitvideo5.mp4",
+            "images/dixitvideo_1.mp4",
+            "images/dixitvideo_2.mp4",
+            "images/dixitvideo_3.mp4",
+            "images/dixitvideo_4.mp4",
+            "images/dixitvideo_5.mp4",
         ];
         
         let userFirstWord = "";
+
+        // Setup video looping logic
+        const mindVideoEl = mindOverlay ? mindOverlay.querySelector("video") : null;
+        let videoPlayCount = 0;
+
+        if (mindVideoEl) {
+            mindVideoEl.removeAttribute("loop"); 
+            mindVideoEl.addEventListener("ended", () => {
+                videoPlayCount++;
+                if (videoPlayCount < 2) {
+                    mindVideoEl.currentTime = 0;
+                    mindVideoEl.play().catch(e => console.warn("Video replay failed:", e));
+                }
+            });
+        }
 
         function showMindOverlay() {
             if (!mindOverlay) return;
@@ -496,15 +511,16 @@
             mindOverlay.setAttribute("aria-hidden", "false");
             
             // Ensure video plays if it was paused or not started
-            const video = mindOverlay.querySelector("video");
-            if (video) {
+            if (mindVideoEl) {
+                videoPlayCount = 0; // Reset count on new show
+                
                 // Pick random video
                 const randomVideo = mindVideos[Math.floor(Math.random() * mindVideos.length)];
-                video.src = randomVideo;
+                mindVideoEl.src = randomVideo;
                 
-                video.muted = false;
-                video.currentTime = 0;
-                video.play().catch(e => console.warn("Video play failed:", e));
+                mindVideoEl.muted = false;
+                mindVideoEl.currentTime = 0;
+                mindVideoEl.play().catch(e => console.warn("Video play failed:", e));
             }
         }
 
@@ -733,11 +749,15 @@
           return;
         }
 
-        const MIN_DELAY_MS = 10000;
-        const MAX_DELAY_MS = 30000;
-        let timerStarted = false;
-        let timerId = 0;
+        const MIN_DURATION_MS = 10000;
+        const MAX_DURATION_MS = 60000; // 10s to 60s
+        const STOP_THRESHOLD_MS = 400; // If no move for 400ms, continuous movement is broken
+
         let hasRevealed = false;
+        let isMoving = false;
+        let movementStartTime = 0;
+        let requiredDuration = 0;
+        let stopTimer = 0;
 
         function revealPrompt() {
           if (hasRevealed) {
@@ -745,37 +765,53 @@
           }
 
           hasRevealed = true;
-          window.clearTimeout(timerId);
+          if (stopTimer) clearTimeout(stopTimer);
+
           prompt.setAttribute("data-state", "visible");
           prompt.removeAttribute("aria-hidden");
           document.removeEventListener("pointermove", handlePointerMove, true);
         }
 
-        function scheduleReveal() {
-          const delay =
-            MIN_DELAY_MS + Math.random() * (MAX_DELAY_MS - MIN_DELAY_MS);
-          timerId = window.setTimeout(revealPrompt, delay);
+        function handleStop() {
+          isMoving = false;
+          // Continuous movement broken; next move will restart timer with new random duration.
         }
 
         function handlePointerMove() {
-          if (hasRevealed || timerStarted) {
-            if (hasRevealed) {
-              document.removeEventListener("pointermove", handlePointerMove, true);
-            }
+          if (hasRevealed) {
             return;
           }
 
-          timerStarted = true;
-          scheduleReveal();
+          const now = Date.now();
+
+          // Reset the stop detector
+          if (stopTimer) {
+            clearTimeout(stopTimer);
+          }
+
+          // If starting a new movement segment
+          if (!isMoving) {
+            isMoving = true;
+            movementStartTime = now;
+            // Set a new random threshold for this run
+            requiredDuration =
+              MIN_DURATION_MS + Math.random() * (MAX_DURATION_MS - MIN_DURATION_MS);
+          }
+
+          // Check elapsed time
+          const elapsed = now - movementStartTime;
+          if (elapsed >= requiredDuration) {
+            revealPrompt();
+            return;
+          }
+
+          // If no further event within threshold, consider it a stop
+          stopTimer = setTimeout(handleStop, STOP_THRESHOLD_MS);
         }
 
         document.addEventListener("pointermove", handlePointerMove, {
           passive: true,
           capture: true,
-        });
-
-        window.addEventListener("beforeunload", () => {
-          window.clearTimeout(timerId);
         });
       })();
     </script>
